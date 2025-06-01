@@ -1,0 +1,28 @@
+.user-list {
+  width: 80%;
+  margin: 20px auto;
+  font-family: sans-serif;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+th, td {
+  padding: 10px;
+  border: 1px solid #ddd;
+}
+
+th {
+  background-color: #007BFF;
+  color: white;
+}
+
+button {
+  padding: 5px 10px;
+  background: red;
+  color: white;
+  border: none;
+  border-radius: 4px;
+}
