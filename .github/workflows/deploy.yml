@@ -7,41 +7,84 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-
+    
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v3
-
+        uses: actions/checkout@v4
+        
       - name: Set up SSH
         run: |
           mkdir -p ~/.ssh
-          echo "${{ secrets.EC2_KEY }}" > ~/.ssh/id_rsa
+          echo "${{ secrets.EC2_KEY }}" | tr -d '\r' > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
+          chmod 700 ~/.ssh
           ssh-keyscan -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts
-
+          
       - name: Deploy Frontend via SSH
         run: |
-          ssh -o StrictHostKeyChecking=no ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} 'bash -s' <<'ENDSSH'
+          ssh -o StrictHostKeyChecking=no ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << 'EOF'
+            set -e
+            
+            echo "Starting frontend deployment..."
+            
+            # Stop existing frontend PM2 process
+            pm2 stop frontend 2>/dev/null || echo "No existing frontend to stop"
+            pm2 delete frontend 2>/dev/null || echo "No existing frontend to delete"
+            
+            # Navigate to frontend directory
             echo "Navigating to frontend directory..."
             cd /home/ubuntu/frontend
-
+            
+            # Clone or pull repository
             if [ ! -d ".git" ]; then
               echo "Cloning frontend repo..."
               rm -rf *
-              git clone https://github.com/tejonidhi-wizzy/mern-frontend.git .
+              rm -rf .[^.]*  # Remove hidden files except . and ..
+              git clone https://github.com/tejonidhi-wizzy/mern-frontend.git frontend
             else
               echo "Pulling latest changes..."
               git pull origin master
             fi
-
+            
+            echo "Current directory contents:"
+            ls -la
+            
+            # Check if package.json exists
+            if [ ! -f "package.json" ]; then
+              echo "Error: package.json not found!"
+              exit 1
+            fi
+            
+            # Install dependencies
             echo "Installing dependencies..."
             npm install
-
+            
+            # Build React app
             echo "Building React app..."
             npm run build
-
+            
+            # Check if build directory was created
+            if [ ! -d "build" ]; then
+              echo "Error: Build directory not found!"
+              echo "Available directories:"
+              ls -la
+              exit 1
+            fi
+            
+            # Install serve globally if not already installed
+            echo "Installing serve globally..."
+            npm install -g serve
+            
+            # Start frontend app with PM2
             echo "Starting frontend app with PM2..."
-            pm2 delete frontend || true
             pm2 start serve --name frontend -- -s build -l 3000
+            
+            # Save PM2 configuration
             pm2 save
-ENDSSH
+            
+            # Show PM2 status
+            pm2 list
+            
+            echo "Frontend deployment completed successfully!"
+            echo "Frontend should be accessible at http://your-ec2-ip:3000"
+          EOF
