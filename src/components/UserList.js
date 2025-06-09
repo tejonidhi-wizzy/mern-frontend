@@ -8,14 +8,14 @@ function UserList() {
   const navigate = useNavigate();
 
   const fetchUsers = async () => {
-    const res = await axios.get('http://localhost:5000/api/users');
+    const res = await axios.get('${process.env.REACT_APP_API_URL}/api/users');
     setUsers(res.data);
   };
 
   const deleteUser = async (id) => {
     const confirm = window.confirm("Are you sure you want to delete this user?");
     if (!confirm) return;
-    await axios.delete(`http://localhost:5000/api/users/${id}`);
+    await axios.delete(`${process.env.REACT_APP_API_URL}/api/users/${id}`);
     fetchUsers();
   };
 

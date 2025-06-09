@@ -20,7 +20,7 @@ function UserForm() {
   // Fetch user for edit
   useEffect(() => {
     if (id) {
-      axios.get(`http://localhost:5000/api/users/${id}`).then(res => {
+      axios.get(`${process.env.REACT_APP_API_URL}/api/users/${id}`).then(res => {
         setUser(res.data);
       });
     }
@@ -35,10 +35,10 @@ function UserForm() {
     e.preventDefault();
     try {
       if (id) {
-        await axios.put(`http://localhost:5000/api/users/${id}`, user);
+        await axios.put(`${process.env.REACT_APP_API_URL}/api/users/${id}`, user);
         alert('User updated!');
       } else {
-        await axios.post('http://localhost:5000/api/users', user);
+        await axios.post('${process.env.REACT_APP_API_URL}/api/users', user);
         alert('User Created!');
       }
 
