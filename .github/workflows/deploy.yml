@@ -22,31 +22,28 @@ jobs:
       - name: Deploy Frontend via SSH
         run: |
           ssh -o StrictHostKeyChecking=no ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << 'EOF'
+            echo "Navigating to frontend directory..."
             cd /home/ubuntu/frontend
 
             if [ ! -d ".git" ]; then
               echo "Cloning frontend repo..."
               rm -rf *
-              git clone https://github.com/tejonidhi-wizzy/mern-frontend.git .
+              git clone https://github.com/tejonidhi-wizzy/mern-frontend.git frontend
             else
-              echo "Pulling latest code..."
+              echo "Pulling latest changes..."
               git pull origin master
             fi
 
             echo "Installing dependencies..."
             npm install
 
-            echo "Building app..."
+            echo "Building React app..."
             npm run build
 
-            echo "Creating PM2 start script..."
-            echo '#!/bin/bash' > start-frontend.sh
-            echo 'cd /home/ubuntu/frontend' >> start-frontend.sh
-            echo 'npx serve -s build -l 3000' >> start-frontend.sh
-            chmod +x start-frontend.sh
-
-            echo "Restarting frontend process..."
+            echo "Starting frontend app with PM2..."
             pm2 delete frontend || true
-            pm2 start ./start-frontend.sh --name frontend
+            pm2 start serve --name frontend -- -s build -l 3000
             pm2 save
-          EOF
+
+            echo "Deployment complete!"
+         EOF
