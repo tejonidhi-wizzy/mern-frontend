@@ -1,5 +1,5 @@
 name: Deploy Frontend
- 
+
 on:
   push:
     branches: [ master ]
@@ -22,23 +22,35 @@ jobs:
       - name: Deploy Frontend via SSH
         run: |
           ssh -o StrictHostKeyChecking=no ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << 'EOF'
+            echo "Switching to frontend directory..."
             cd /home/ubuntu/frontend
 
             if [ ! -d ".git" ]; then
               echo "Cloning frontend repo..."
               rm -rf *
-              git clone https://github.com/tejonidhi-wizzy/mern-frontend.git .
+              git clone https://github.com/tejonidhi-wizzy/mern-frontend.git frontend
             else
+              echo "Pulling latest code..."
               git pull origin master
             fi
 
+            echo "Installing dependencies..."
             npm install
+
+            echo "Building React app..."
             npm run build
 
-            if pm2 list | grep -q 'frontend'; then
-              pm2 delete frontend
-            fi
+            echo "Creating start script for PM2..."
+            cat <<EOL > start-frontend.sh
+#!/bin/bash
+cd /home/ubuntu/frontend
+npx serve -s build -l 3000
+EOL
 
-            pm2 start npx --name frontend -- serve -s build -l 3000
+            chmod +x start-frontend.sh
+
+            echo "Restarting PM2..."
+            pm2 delete frontend || true
+            pm2 start ./start-frontend.sh --name frontend
             pm2 save
-          EOF
+EOF
