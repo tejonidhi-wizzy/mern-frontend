@@ -49,4 +49,4 @@ jobs:
             pm2 delete frontend || true
             pm2 start ./start-frontend.sh --name frontend
             pm2 save
-EOF
+          EOF
