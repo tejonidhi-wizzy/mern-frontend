@@ -20,41 +20,33 @@ jobs:
           chmod 700 ~/.ssh
           ssh-keyscan -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts
 
-      - name: Deploy Frontend via SSH
+      - name: Deploy Frontend via Docker
         run: |
           ssh -o StrictHostKeyChecking=no ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << 'EOF'
             set -e
-            echo "🚀 Starting frontend deployment..."
+            echo "Starting frontend deployment via Docker..."
 
-            # Go to home and clear old frontend folder
-            cd /home/ubuntu
-            echo "🧹 Cleaning old frontend directory..."
-            rm -rf frontend
+            cd /home/ubuntu/frontend
 
-            # Check if the repository already exists
-            if [ -d "frontend/.git" ]; then
-              echo "🔄 Pulling latest changes..."
-              cd frontend
-              git reset --hard
-              git pull origin master
+            # Ensure the repo is in sync
+            if [ ! -d ".git" ]; then
+              echo "Cloning repo..."
+              rm -rf *
+              git clone https://github.com/tejonidhi-wizzy/mern-frontend.git .
             else
-              echo "📥 Cloning latest frontend repo..."
-              git clone https://github.com/tejonidhi-wizzy/mern-frontend.git frontend
-              cd frontend
+              echo "Pulling latest changes..."
+              git reset --hard HEAD
+              git pull origin master
             fi
 
-            echo "📦 Installing dependencies..."
-            npm install
+            echo "Building Docker image..."
+            docker build -t front-end .
 
-            echo "🏗️  Building React app..."
-            npm run build
+            echo "Stopping existing container (if any)..."
+            docker rm -f frontend-container || true
 
-            echo "🔁 Restarting frontend app with PM2..."
-            pm2 restart frontend || pm2 start "npx serve -s build -l 3000" --name frontend
+            echo "Running new Docker container..."
+            docker run -d -p 3000:3000 --name frontend-container front-end
 
-            echo "💾 Saving PM2 process list..."
-            pm2 save
-
-            echo "✅ Deployment successful! Check app at http://${{ secrets.EC2_HOST }}:3000"
-            pm2 list
+            echo "Docker deployment completed. Visit: http://<your-ec2-ip>:3000"
           EOF
