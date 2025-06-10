@@ -71,20 +71,29 @@ jobs:
               exit 1
             fi
             
-            # Install serve globally if not already installed
-            echo "Installing serve globally..."
-            npm install -g serve
-            
-            # Start frontend app with PM2
-            echo "Starting frontend app with PM2..."
-            pm2 start serve --name frontend -- -s build -l 3000
-            
+            # Create a custom script to serve the build directory
+            echo "Creating custom serve script..."
+            cat << 'SERVE_SCRIPT' > serve.js
+            import serve from 'serve';
+
+            const options = {
+              port: 3000,
+              single: true,
+            };
+
+            serve('build', options);
+            SERVE_SCRIPT
+
+            # Start frontend app with PM2 using the custom script
+            echo "Starting frontend app with PM2 using custom serve script..."
+            pm2 start serve.js --name frontend
+
             # Save PM2 configuration
             pm2 save
-            
+
             # Show PM2 status
             pm2 list
-            
+
             echo "Frontend deployment completed successfully!"
             echo "Frontend should be accessible at http://your-ec2-ip:3000"
           EOF
