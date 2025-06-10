@@ -88,7 +88,12 @@ jobs:
             echo "Starting frontend app with PM2 using custom serve script..."
             pm2 start serve.js --name frontend
 
-            # Save PM2 configuration
+            # Enable PM2 startup script
+            echo "Configuring PM2 to autostart on system reboot..."
+            pm2 startup systemd -u $USER --hp /home/$USER
+
+            # Save PM2 process list
+            echo "Saving PM2 process list..."
             pm2 save
 
             # Show PM2 status
