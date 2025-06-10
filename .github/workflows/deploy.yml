@@ -31,10 +31,17 @@ jobs:
             echo "🧹 Cleaning old frontend directory..."
             rm -rf frontend
 
-            echo "📥 Cloning latest frontend repo..."
-            git clone https://github.com/tejonidhi-wizzy/mern-frontend.git frontend
-
-            cd frontend
+            # Check if the repository already exists
+            if [ -d "frontend/.git" ]; then
+              echo "🔄 Pulling latest changes..."
+              cd frontend
+              git reset --hard
+              git pull origin master
+            else
+              echo "📥 Cloning latest frontend repo..."
+              git clone https://github.com/tejonidhi-wizzy/mern-frontend.git frontend
+              cd frontend
+            fi
 
             echo "📦 Installing dependencies..."
             npm install
