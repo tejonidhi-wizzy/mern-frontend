@@ -11,7 +11,8 @@ function UserForm() {
     address: '',
     age: '',
     gender: '',
-    bio: ''
+    bio: '',
+    semester: '' // added semester to user state
   });
 
   const { id } = useParams(); // destructring id from useParams
@@ -44,7 +45,7 @@ function UserForm() {
 
       setUser({
         name: '', email: '', phone: '',
-        address: '', age: '', gender: '', bio: ''
+        address: '', age: '', gender: '', bio: '', semester: ''
       });
 
       navigate('/users');
@@ -69,6 +70,17 @@ function UserForm() {
           <option value="Other">Other</option>
         </select>
         <textarea name="bio" placeholder="Short Bio" rows={3} value={user.bio} onChange={handleChange}></textarea>
+        <select name="semester" value={user.semester} onChange={handleChange} required>
+          <option value="">Select Semester</option>
+          <option value="Semester 1">Semester 1</option>
+          <option value="Semester 2">Semester 2</option>
+          <option value="Semester 3">Semester 3</option>
+          <option value="Semester 4">Semester 4</option>
+          <option value="Semester 5">Semester 5</option>
+          <option value="Semester 6">Semester 6</option>
+          <option value="Semester 7">Semester 7</option>
+          <option value="Semester 8">Semester 8</option>
+        </select>
         <button type="submit">{id ? 'Update' : 'Submit'}</button>
       </form>
     </div>

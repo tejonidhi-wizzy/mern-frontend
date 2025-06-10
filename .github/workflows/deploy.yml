@@ -1,5 +1,126 @@
-name: Deploy Frontend
+# name: Deploy Frontend
  
+# on:
+#   push:
+#     branches: [ master ]
+
+# jobs:
+#   deploy:
+#     runs-on: ubuntu-latest
+    
+#     steps:
+#       - name: Checkout Code
+#         uses: actions/checkout@v4
+        
+#       - name: Set up SSH
+#         run: |
+#           mkdir -p ~/.ssh
+#           echo "${{ secrets.EC2_KEY }}" | tr -d '\r' > ~/.ssh/id_rsa
+#           chmod 600 ~/.ssh/id_rsa
+#           chmod 700 ~/.ssh
+#           ssh-keyscan -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts
+          
+#       - name: Deploy Frontend via SSH
+#         run: |
+#           ssh -o StrictHostKeyChecking=no ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << 'EOF'
+#             set -e
+            
+#             echo "Starting frontend deployment..."
+            
+#             # Stop existing frontend PM2 process
+#             pm2 stop frontend 2>/dev/null || echo "No existing frontend to stop"
+#             pm2 delete frontend 2>/dev/null || echo "No existing frontend to delete"
+            
+#             # Navigate to frontend directory
+#             echo "Navigating to frontend directory..."
+#             cd /home/ubuntu/frontend
+            
+#             # Clone or pull repository
+#             if [ ! -d ".git" ]; then
+#               echo "Cloning frontend repo..."
+#               rm -rf *
+#               rm -rf .[^.]*  # Remove hidden files except . and ..
+#               git clone https://github.com/tejonidhi-wizzy/mern-frontend.git frontend
+#             else
+#               echo "Pulling latest changes..."
+#               git pull origin master
+#             fi
+            
+#             echo "Current directory contents:"
+#             ls -la
+            
+#             # Check if package.json exists
+#             if [ ! -f "package.json" ]; then
+#               echo "Error: package.json not found!"
+#               exit 1
+#             fi
+            
+#             # Install dependencies
+#             echo "Installing dependencies..."
+#             npm install
+            
+#             # Build React app
+#             echo "Building React app..."
+#             npm run build
+            
+#             # Check if build directory was created
+#             if [ ! -d "build" ]; then
+#               echo "Error: Build directory not found!"
+#               echo "Available directories:"
+#               ls -la
+#               exit 1
+#             fi
+            
+#             # Create a custom script to serve the build directory
+#             echo "Creating custom serve script..."
+#             cat << 'SERVE_SCRIPT' > serve.js
+#             import serve from 'serve';
+
+#             const options = {
+#               port: 3000,
+#               single: true,
+#             };
+
+#             serve('build', options);
+#             SERVE_SCRIPT
+
+#             # Start frontend app with PM2 using the custom script
+#             echo "Starting frontend app with PM2 using custom serve script..."
+#             pm2 start serve.js --name frontend
+
+#             # Enable PM2 startup script
+#             echo "Configuring PM2 to autostart on system reboot..."
+#             pm2 startup systemd -u $USER --hp /home/$USER
+
+#             # Save PM2 process list
+#             echo "Saving PM2 process list..."
+#             pm2 save
+
+#             # Verify PM2 startup script configuration
+#             echo "Verifying PM2 startup script..."
+#             pm2 startup systemd -u $USER --hp /home/$USER
+
+#             # Save PM2 process list again to ensure persistence
+#             echo "Re-saving PM2 process list..."
+#             pm2 save
+
+#             # Reload systemd to apply PM2 startup changes
+#             echo "Reloading systemd daemon..."
+#             sudo systemctl daemon-reload
+
+#             echo "PM2 startup configuration verified and saved."
+
+#             # Show PM2 status
+#             pm2 list
+
+#             echo "Frontend deployment completed successfully!"
+#             echo "Frontend should be accessible at http://your-ec2-ip:3000"
+#           EOF
+
+
+
+name: Deploy Frontend
+
 on:
   push:
     branches: [ master ]
@@ -7,11 +128,11 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
-        
+
       - name: Set up SSH
         run: |
           mkdir -p ~/.ssh
@@ -19,100 +140,39 @@ jobs:
           chmod 600 ~/.ssh/id_rsa
           chmod 700 ~/.ssh
           ssh-keyscan -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts
-          
+
       - name: Deploy Frontend via SSH
         run: |
           ssh -o StrictHostKeyChecking=no ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << 'EOF'
             set -e
-            
             echo "Starting frontend deployment..."
-            
-            # Stop existing frontend PM2 process
-            pm2 stop frontend 2>/dev/null || echo "No existing frontend to stop"
-            pm2 delete frontend 2>/dev/null || echo "No existing frontend to delete"
-            
-            # Navigate to frontend directory
-            echo "Navigating to frontend directory..."
+
             cd /home/ubuntu/frontend
-            
-            # Clone or pull repository
+
             if [ ! -d ".git" ]; then
-              echo "Cloning frontend repo..."
+              echo "Cloning repo..."
               rm -rf *
-              rm -rf .[^.]*  # Remove hidden files except . and ..
-              git clone https://github.com/tejonidhi-wizzy/mern-frontend.git frontend
+              git clone https://github.com/tejonidhi-wizzy/mern-frontend.git .
             else
               echo "Pulling latest changes..."
               git pull origin master
             fi
-            
-            echo "Current directory contents:"
-            ls -la
-            
-            # Check if package.json exists
-            if [ ! -f "package.json" ]; then
-              echo "Error: package.json not found!"
-              exit 1
-            fi
-            
-            # Install dependencies
+
             echo "Installing dependencies..."
             npm install
-            
-            # Build React app
+
             echo "Building React app..."
             npm run build
-            
-            # Check if build directory was created
-            if [ ! -d "build" ]; then
-              echo "Error: Build directory not found!"
-              echo "Available directories:"
-              ls -la
-              exit 1
-            fi
-            
-            # Create a custom script to serve the build directory
-            echo "Creating custom serve script..."
-            cat << 'SERVE_SCRIPT' > serve.js
-            import serve from 'serve';
 
-            const options = {
-              port: 3000,
-              single: true,
-            };
+            echo "Restarting frontend with PM2..."
+            pm2 restart frontend || pm2 start serve --name frontend -- -s build -l 3000
 
-            serve('build', options);
-            SERVE_SCRIPT
-
-            # Start frontend app with PM2 using the custom script
-            echo "Starting frontend app with PM2 using custom serve script..."
-            pm2 start serve.js --name frontend
-
-            # Enable PM2 startup script
-            echo "Configuring PM2 to autostart on system reboot..."
-            pm2 startup systemd -u $USER --hp /home/$USER
-
-            # Save PM2 process list
-            echo "Saving PM2 process list..."
+            echo "Saving PM2 state..."
             pm2 save
 
-            # Verify PM2 startup script configuration
-            echo "Verifying PM2 startup script..."
-            pm2 startup systemd -u $USER --hp /home/$USER
-
-            # Save PM2 process list again to ensure persistence
-            echo "Re-saving PM2 process list..."
-            pm2 save
-
-            # Reload systemd to apply PM2 startup changes
-            echo "Reloading systemd daemon..."
-            sudo systemctl daemon-reload
-
-            echo "PM2 startup configuration verified and saved."
-
-            # Show PM2 status
+            echo "PM2 status:"
             pm2 list
 
-            echo "Frontend deployment completed successfully!"
-            echo "Frontend should be accessible at http://your-ec2-ip:3000"
+            echo "Frontend deployment successful!"
+            echo "Check at http://your-ec2-ip:3000"
           EOF
