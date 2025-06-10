@@ -39,7 +39,7 @@ function UserForm() {
         await axios.put(`${process.env.REACT_APP_API_URL}/api/users/${id}`, user);
         alert('User updated!');
       } else {
-        await axios.post('${process.env.REACT_APP_API_URL}/api/users', user);
+        await axios.post(`${process.env.REACT_APP_API_URL}/api/users`, user);
         alert('User Created!');
       }
 

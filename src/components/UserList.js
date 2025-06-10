@@ -8,7 +8,7 @@ function UserList() {
   const navigate = useNavigate();
 
   const fetchUsers = async () => {
-    const res = await axios.get('${process.env.REACT_APP_API_URL}/api/users');
+    const res = await axios.get(`${process.env.REACT_APP_API_URL}/api/users`);
     setUsers(res.data);
   };
 
