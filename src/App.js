@@ -1,7 +1,7 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
-import UserForm from './components/UserForm';
-import UserList from './components/UserList';
+import UserForm from './components/UserForm.js';
+import UserList from './components/UserList.js';
 
 function App() {
   return (
